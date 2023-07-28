@@ -10,5 +10,4 @@
 
 ## Design Choices
 1. Vanilla CSS (At last an opportunity to learn it!)
-6. AlpineJS for frontend JS (Going as minimal as possible)
-7. Server Side Rendering (I think it's better for a simple project)
+2. Server Side Rendering (I think it's better for a simple project)
