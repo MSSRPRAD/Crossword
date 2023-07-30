@@ -1,0 +1,34 @@
+<!-- public/index.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crossword Generator</title>
+</head>
+<body>
+  <form action="/generate" method="post">
+    <label for="words">Enter words (one per line):</label><br>
+    <textarea id="words" name="words" rows="5" cols="50"></textarea><br>
+    <label for="dim">Grid Size:</label>
+    <input type="number" id="dim" name="dim" value="10"><br>
+    <label for="count">Number of Crosswords:</label>
+    <input type="number" id="count" name="count" value="3"><br>
+    <button type="submit">Generate Crosswords</button>
+  </form>
+
+    {% for crossword in crosswords %}
+    <h2>Crossword {{ loop.index }}</h2>
+    <table>
+      {% for row in crossword.board %}
+        <tr>
+          {% for cell in row %}
+            <td>{{ cell }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+    <br>
+  {% endfor %}
+
+</body>
+</html>
