@@ -72,6 +72,18 @@ function generate(words, dim) {
                 }
             }
         }
+        function fillRemainingWithRandom(crossword) {
+            const dim = crossword.board.length;
+            for (let row = 0; row < dim; row++) {
+                for (let col = 0; col < dim; col++) {
+                    if (crossword.board[row][col] === 'X') {
+                        // Generate a random character (ASCII code: 65-90 for uppercase letters)
+                        const randomChar = String.fromCharCode(Math.floor(Math.random() * 26) + 65);
+                        crossword.board[row][col] = randomChar;
+                    }
+                }
+            }
+        }
         while (true) {
             let allWordsPlaced = true;
             for (let i = 0; i < words.length; i++) {
@@ -94,7 +106,8 @@ function generate(words, dim) {
                 }
             }
             if (allWordsPlaced) {
-                // All words are placed successfully, exit the while loop
+                console.log(crossword.toString());
+                fillRemainingWithRandom(crossword);
                 break;
             }
             else {

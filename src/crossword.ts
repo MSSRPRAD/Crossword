@@ -66,6 +66,19 @@ async function generate(words: Word[], dim: number): Promise<Crossword> {
       }
     }
   }
+function fillRemainingWithRandom(crossword: Crossword): void {
+  const dim = crossword.board.length;
+
+  for (let row = 0; row < dim; row++) {
+    for (let col = 0; col < dim; col++) {
+      if (crossword.board[row][col] === 'X') {
+        // Generate a random character (ASCII code: 65-90 for uppercase letters)
+        const randomChar = String.fromCharCode(Math.floor(Math.random() * 26) + 65);
+        crossword.board[row][col] = randomChar;
+      }
+    }
+  }
+}
 
     while (true) {
         let allWordsPlaced = true;
@@ -93,14 +106,15 @@ async function generate(words: Word[], dim: number): Promise<Crossword> {
             }
         }
 
-        if (allWordsPlaced) {
-            // All words are placed successfully, exit the while loop
+        if (allWordsPlaced){
+            console.log(crossword.toString());
+            fillRemainingWithRandom(crossword);
             break;
         } else {
             // Clear the board and try again
             crossword.board = Array.from({ length: dim }, () => Array.from({ length: dim }, () => 'X'));
         }
-}
+    }
     return crossword;
 }
 
