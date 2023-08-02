@@ -107,7 +107,7 @@ function generate(words, dim) {
             }
             if (allWordsPlaced) {
                 console.log(crossword.toString());
-                fillRemainingWithRandom(crossword);
+                // fillRemainingWithRandom(crossword);
                 break;
             }
             else {

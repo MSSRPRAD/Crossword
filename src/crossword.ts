@@ -108,7 +108,7 @@ function fillRemainingWithRandom(crossword: Crossword): void {
 
         if (allWordsPlaced){
             console.log(crossword.toString());
-            fillRemainingWithRandom(crossword);
+            // fillRemainingWithRandom(crossword);
             break;
         } else {
             // Clear the board and try again

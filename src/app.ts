@@ -17,6 +17,7 @@ nunjucks.configure(templatesDir, {
 
 // Middleware to parse the request body
 app.use(express.urlencoded({ extended: true }));
+
 app.get('/', (req, res) => {
   const crosswords: Crossword[] = [];
   res.render('index.html', { crosswords });
