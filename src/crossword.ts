@@ -15,7 +15,7 @@ function createInitialCrossword(rows: number, cols: number): Crossword {
   for (let r = 0; r < rows; r++) {
     emptyBoard[r] = [];
     for (let c = 0; c < cols; c++) {
-      emptyBoard[r][c] = 'X';
+      emptyBoard[r][c] = "X";
     }
   }
 
@@ -30,7 +30,7 @@ function findPotentialPlacements(
   const rows = board.length;
   const cols = board[0].length;
   const wordLength = word.data.length;
-  const isEmptyBoard = board.every(row => row.every(cell => cell === 'X'));
+  const isEmptyBoard = board.every(row => row.every(cell => cell === "X"));
   if(isEmptyBoard) {
     return [[rows / 2, cols / 2, 'horizontal', 0]];
   }
@@ -41,8 +41,10 @@ function findPotentialPlacements(
       for (let i = 0; i < wordLength; i++) {
         if (board[r][c + i] === word.data[i]) {
           intersections++;
-        } else if (board[r][c + i] !== 'X') {
+        } else if (board[r][c + i] !== "X") {
           intersections = 0;
+          nearnessScore = 0;
+          break;
         } else {
           if (board[r-1][c+i] !== "X" || board[r+1][c+i] !== "X") {
             nearnessScore++;
@@ -50,14 +52,14 @@ function findPotentialPlacements(
         }
       }
 
-      if (intersections >= 0) {
+      if (intersections >= 0 || nearnessScore >= 0) {
         placements.push([r, c, 'horizontal', intersections * 10 ]);
       }
     }
   }
 
-  for (let r = 0; r <= rows - wordLength; r++) {
-    for (let c = 0; c < cols; c++) {
+  for (let r = 1; r <= rows - wordLength; r++) {
+    for (let c = 1; c < cols; c++) {
       let intersections = 0;
       let nearnessScore = 0;
 
@@ -65,8 +67,13 @@ function findPotentialPlacements(
         if (board[r + i][c] === word.data[i]) {
           intersections++;
         } else if (board[r + i][c] !== 'X') {
-          nearnessScore++;
+          nearnessScore = 0;
+          intersections = 0;
           break;
+        } else {
+          if (board[r+i][c-1] !== "X" || board[r+i][c+1] !== "X") {
+            nearnessScore++;
+          }
         }
       }
 
