@@ -1,134 +1,180 @@
 export interface Crossword {
-    board: string[][];
+  board: string[][];
 }
 
 export interface Word {
-    data: string[];
+  data: string[];
 }
 
-function shuffleArray<T>(array: T[]): T[] {
-    for(let i = array.length-1; i > 0; i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [array[i], array[j]] = [array[j], array[i]];
+type PotentialPlacement = [number, number, 'horizontal' | 'vertical', number];
+
+
+function createInitialCrossword(rows: number, cols: number): Crossword {
+  const emptyBoard: string[][] = [];
+
+  for (let r = 0; r < rows; r++) {
+    emptyBoard[r] = [];
+    for (let c = 0; c < cols; c++) {
+      emptyBoard[r][c] = 'X';
     }
-    return array;
+  }
+
+  return { board: emptyBoard };
 }
 
-
-
-async function generate(words: Word[], dim: number): Promise<Crossword> {
-    // Make an empty Crossword
-    var crossword: Crossword = {
-        board: Array.from({ length: dim }, () => Array.from({ length: dim }, () => 'X')),
-    };
-    console.log(words[0].data);
-    // Useful Functions
-
-  // Function to check if a word fits in the chosen direction
-  function checkFit(word: string[], row: number, col: number, direction: string): boolean {
-    const len = word.length;
-    if (direction === "horizontal") {
-      if (col + len > dim) return false; // Word goes out of bounds
-      for (let i = 0; i < len; i++) {
-        if (crossword.board[row][col + i] !== "X" && crossword.board[row][col + i] !== word[i])
-          return false; // Word overlaps with existing letters
-      }
-    } else if (direction === "vertical") {
-      if (row + len > dim) return false; // Word goes out of bounds
-      for (let i = 0; i < len; i++) {
-        if (crossword.board[row + i][col] !== "X" && crossword.board[row + i][col] !== word[i])
-          return false; // Word overlaps with existing letters
-      }
-    } else if (direction === "diagonal") {
-      if (row + len > dim || col + len > dim) return false; // Word goes out of bounds
-      for (let i = 0; i < len; i++) {
-        if (crossword.board[row + i][col + i] !== "X" && crossword.board[row + i][col + i] !== word[i])
-          return false; // Word overlaps with existing letters
-      }
-    }
-    return true;
+function findPotentialPlacements(
+  board: string[][],
+  word: Word
+): PotentialPlacement[] {
+  const placements: PotentialPlacement[] = [];
+  const rows = board.length;
+  const cols = board[0].length;
+  const wordLength = word.data.length;
+  const isEmptyBoard = board.every(row => row.every(cell => cell === 'X'));
+  if(isEmptyBoard) {
+    return [[rows / 2, cols / 2, 'horizontal', 0]];
   }
-
-  // Function to place a word in the chosen direction
-  function placeWord(word: string[], row: number, col: number, direction: string): void {
-    const len = word.length;
-    if (direction === "horizontal") {
-      for (let i = 0; i < len; i++) {
-        crossword.board[row][col + i] = word[i];
-      }
-    } else if (direction === "vertical") {
-      for (let i = 0; i < len; i++) {
-        crossword.board[row + i][col] = word[i];
-      }
-    } else if (direction === "diagonal") {
-      for (let i = 0; i < len; i++) {
-        crossword.board[row + i][col + i] = word[i];
-      }
-    }
-  }
-function fillRemainingWithRandom(crossword: Crossword): void {
-  const dim = crossword.board.length;
-
-  for (let row = 0; row < dim; row++) {
-    for (let col = 0; col < dim; col++) {
-      if (crossword.board[row][col] === 'X') {
-        // Generate a random character (ASCII code: 65-90 for uppercase letters)
-        const randomChar = String.fromCharCode(Math.floor(Math.random() * 26) + 65);
-        crossword.board[row][col] = randomChar;
-      }
-    }
-  }
-}
-
-    while (true) {
-        let allWordsPlaced = true;
-
-        for (let i = 0; i < words.length; i++) {
-            const word = words[i].data;
-            let wordPlaced = false;
-
-            while (!wordPlaced) {
-                const startRow = Math.floor(Math.random() * dim);
-                const startCol = Math.floor(Math.random() * dim);
-                const directions = ["horizontal", "vertical", "diagonal"];
-                const randomDirection = directions[Math.floor(Math.random() * directions.length)];
-
-                if (checkFit(word, startRow, startCol, randomDirection)) {
-                    placeWord(word, startRow, startCol, randomDirection);
-                    wordPlaced = true;
-                }
-            }
-
-            if (!wordPlaced) {
-                // If a word cannot be placed, break the outer loop and start over
-                allWordsPlaced = false;
-                break;
-            }
-        }
-
-        if (allWordsPlaced){
-            console.log(crossword.toString());
-            // fillRemainingWithRandom(crossword);
-            break;
+  for (let r = 1; r < rows-1; r++) {
+    for (let c = 1; c <= cols - wordLength; c++) {
+      let intersections = 0;
+      let nearnessScore = 0;
+      for (let i = 0; i < wordLength; i++) {
+        if (board[r][c + i] === word.data[i]) {
+          intersections++;
+        } else if (board[r][c + i] !== 'X') {
+          intersections = 0;
         } else {
-            // Clear the board and try again
-            crossword.board = Array.from({ length: dim }, () => Array.from({ length: dim }, () => 'X'));
+          if (board[r-1][c+i] !== "X" || board[r+1][c+i] !== "X") {
+            nearnessScore++;
+          }
         }
+      }
+
+      if (intersections >= 0) {
+        placements.push([r, c, 'horizontal', intersections * 10 ]);
+      }
     }
-    return crossword;
+  }
+
+  for (let r = 0; r <= rows - wordLength; r++) {
+    for (let c = 0; c < cols; c++) {
+      let intersections = 0;
+      let nearnessScore = 0;
+
+      for (let i = 0; i < wordLength; i++) {
+        if (board[r + i][c] === word.data[i]) {
+          intersections++;
+        } else if (board[r + i][c] !== 'X') {
+          nearnessScore++;
+          break;
+        }
+      }
+
+      if (intersections >= 0 || nearnessScore >= 0) {
+        placements.push([r, c, 'vertical', intersections * 10 + nearnessScore]);
+      }
+    }
+  }
+
+  // Sort placements based on intersections (higher is better) and nearnessScore (lower is better)
+  placements.sort((a, b) => b[3] - a[3]);
+
+  // Return only the top 5 placements
+  return placements.slice(0, 2);
 }
 
-async function generateCrosswords(words: Word[], dim: number, count: number): Promise<Crossword[]> {
-    const crosswords: Crossword[] = [];
-    return Promise.all(
-        Array.from(
-            {length: count},
-            () => generate(
-                shuffleArray([...words]),
-                dim
-            )
-        )
-    );
+
+
+// Function to remove unnecessary 'X's outside the bounding box
+function shortenCrossword(crossword: Crossword): Crossword {
+  const { board } = crossword;
+  const rows = board.length;
+  const cols = board[0].length;
+
+  // Calculate the bounding box coordinates
+  let minRow = rows;
+  let maxRow = 0;
+  let minCol = cols;
+  let maxCol = 0;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (board[r][c] !== 'X') {
+        minRow = Math.min(minRow, r);
+        maxRow = Math.max(maxRow, r);
+        minCol = Math.min(minCol, c);
+        maxCol = Math.max(maxCol, c);
+      }
+    }
+  }
+
+  // Extract the crossword inside the bounding box
+  const shortenedBoard: string[][] = [];
+  for (let r = minRow; r <= maxRow; r++) {
+    shortenedBoard.push(board[r].slice(minCol, maxCol + 1));
+  }
+
+  return { board: shortenedBoard };
+}
+
+async function generateCrosswords(words: Word[]): Promise<Crossword[]> {
+  const crosswords: Crossword[] = [];
+  const initialCrossword: Crossword = createInitialCrossword(300, 300);
+  await generateCrosswordHelper(words, initialCrossword, crosswords);
+  // Shorten each crossword before returning
+  const shortenedCrosswords = crosswords.map(shortenCrossword);
+  return shortenedCrosswords;
+}
+
+function placeWord(board: Crossword, word: Word, placement: PotentialPlacement): Crossword {
+  const { board: currentBoard } = board;
+  const [row, col, orientation, score] = placement;
+  const newBoard: string[][] = [];
+
+  // Make a deep copy of the current board
+  for (let r = 0; r < currentBoard.length; r++) {
+    newBoard[r] = currentBoard[r].slice(); // Deep copy each row
+  }
+
+  // Place the word on the new board
+  for (let i = 0; i < word.data.length; i++) {
+    if (orientation === 'horizontal') {
+      newBoard[row][col + i] = word.data[i];
+    } else {
+      newBoard[row + i][col] = word.data[i];
+    }
+  }
+
+  return { board: newBoard };
+}
+
+
+async function generateCrosswordHelper(
+  words: Word[],
+  currentBoard: Crossword,
+  crosswords: Crossword[]
+): Promise<void> {
+  console.log("reached helper");
+  // Base case: If no words remain, we have a complete crossword. Save the board and return.
+  if (words.length === 0) {
+    console.log("finished one");
+    crosswords.push(currentBoard);
+    return;
+  }
+
+  // Extract the first word from the words array and remaining words for recursion.
+  const [word, ...remainingWords]: Word[] = words;
+  // Find all potential placements for the current word on the current board.
+  const potentialPlacements = findPotentialPlacements(currentBoard.board, word);
+  console.log("got potential placements!");
+  console.log(potentialPlacements.length);
+  // Explore each potential placement.
+  for (const placement of potentialPlacements) {
+    // Create a new board with the word placed at the current placement.
+    const newBoard = placeWord(currentBoard, word, placement);
+    // Recursively call generateCrosswordHelper with the remaining words and the new board.
+    await generateCrosswordHelper(remainingWords, newBoard, crosswords);
+  }
 }
 
 export default generateCrosswords;

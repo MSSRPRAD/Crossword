@@ -34,15 +34,13 @@ app.get('/', (req, res) => {
 // Route to handle the form submission and display the result
 app.post('/generate', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const wordsInput = req.body.words;
-    const dim = Number(req.body.dim);
-    const count = Number(req.body.count);
     // Process the words input from the textarea
     const words = wordsInput
         .split('\n')
         .map((line) => ({ data: line.trim().split('') }))
         .filter((word) => word.data.length > 0);
     // Generate crosswords
-    const crosswords = yield (0, crossword_1.default)(words, dim, count);
+    const crosswords = yield (0, crossword_1.default)(words);
     // Render the result using Nunjucks
     res.render('index.html', { crosswords });
 }));

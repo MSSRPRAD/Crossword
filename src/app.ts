@@ -26,8 +26,6 @@ app.get('/', (req, res) => {
 // Route to handle the form submission and display the result
 app.post('/generate', async (req, res) => {
   const wordsInput = req.body.words;
-  const dim = Number(req.body.dim);
-  const count = Number(req.body.count);
   // Process the words input from the textarea
 const words: Word[] = wordsInput
   .split('\n')
@@ -35,7 +33,7 @@ const words: Word[] = wordsInput
   .filter((word: Word) => word.data.length > 0);
 
   // Generate crosswords
-  const crosswords = await generateCrosswords(words, dim, count);
+  const crosswords = await generateCrosswords(words);
   // Render the result using Nunjucks
   res.render('index.html', { crosswords });
 });
