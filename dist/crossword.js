@@ -28,8 +28,8 @@ function findPotentialPlacements(board, word) {
     if (isEmptyBoard) {
         return [[rows / 2, cols / 2, 'horizontal', 0]];
     }
-    for (let r = 1; r < rows - 1; r++) {
-        for (let c = 1; c <= cols - wordLength; c++) {
+    for (let r = 3; r < rows - 3; r++) {
+        for (let c = 3; c <= cols - wordLength - 3; c++) {
             let intersections = 0;
             let nearnessScore = 0;
             for (let i = 0; i < wordLength; i++) {
@@ -42,8 +42,10 @@ function findPotentialPlacements(board, word) {
                     break;
                 }
                 else {
-                    if (board[r - 1][c + i] !== "X" || board[r + 1][c + i] !== "X") {
-                        nearnessScore++;
+                    for (let p = 1; p <= 3; p++) {
+                        if (board[r - p][c + i] !== "X" || board[r + p][c + i] !== "X") {
+                            nearnessScore += p;
+                        }
                     }
                 }
             }
@@ -52,8 +54,8 @@ function findPotentialPlacements(board, word) {
             }
         }
     }
-    for (let r = 1; r <= rows - wordLength; r++) {
-        for (let c = 1; c < cols; c++) {
+    for (let r = 3; r <= rows - wordLength - 3; r++) {
+        for (let c = 3; c < cols - 3; c++) {
             let intersections = 0;
             let nearnessScore = 0;
             for (let i = 0; i < wordLength; i++) {
@@ -66,8 +68,10 @@ function findPotentialPlacements(board, word) {
                     break;
                 }
                 else {
-                    if (board[r + i][c - 1] !== "X" || board[r + i][c + 1] !== "X") {
-                        nearnessScore++;
+                    for (let p = 1; p <= 3; p++) {
+                        if (board[r + i][c - p] !== "X" || board[r + i][c + p] !== "X") {
+                            nearnessScore += p;
+                        }
                     }
                 }
             }
@@ -115,8 +119,16 @@ function generateCrosswords(words) {
         yield generateCrosswordHelper(words, initialCrossword, crosswords);
         // Shorten each crossword before returning
         const shortenedCrosswords = crosswords.map(shortenCrossword);
-        return shortenedCrosswords;
+        // Sort shortened crosswords by their dimensions (length x width)
+        const sortedCrosswords = shortenedCrosswords.sort((a, b) => getCrosswordSize(a) - getCrosswordSize(b));
+        return sortedCrosswords;
     });
+}
+// Function to get the size (length x width) of a crossword
+function getCrosswordSize(crossword) {
+    const rows = crossword.board.length;
+    const cols = crossword.board[0].length;
+    return rows * cols;
 }
 function placeWord(board, word, placement) {
     const { board: currentBoard } = board;
