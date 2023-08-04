@@ -62,7 +62,7 @@ function findPotentialPlacements(
       }
 
       if (intersections >= 0 || nearnessScore >= 0) {
-        placements.push([r, c, 'horizontal', intersections * 10]);
+        placements.push([r, c, 'horizontal', intersections * 10 + nearnessScore]);
       }
 
       // Backward placement
@@ -85,7 +85,7 @@ function findPotentialPlacements(
       }
 
       if (intersections >= 0 || nearnessScore >= 0) {
-        placements.push([r, c, 'horizontal-reverse', intersections * 10]);
+        placements.push([r, c, 'horizontal-reverse', intersections * 10 + nearnessScore]);
       }
     }
   }
@@ -136,7 +136,7 @@ function findPotentialPlacements(
       }
 
       if (intersections >= 0 || nearnessScore >= 0) {
-        placements.push([r, c, 'vertical-reverse', intersections * 10]);
+        placements.push([r, c, 'vertical-reverse', intersections * 10 + nearnessScore]);
       }
     }
   }

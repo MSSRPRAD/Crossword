@@ -21,6 +21,7 @@ const app = (0, express_1.default)();
 const port = 3000;
 // Configure Nunjucks
 const templatesDir = path_1.default.resolve(__dirname, 'public');
+app.use(express_1.default.static(templatesDir));
 nunjucks_1.default.configure(templatesDir, {
     autoescape: true,
     express: app,
@@ -34,15 +35,26 @@ app.get('/', (req, res) => {
 // Route to handle the form submission and display the result
 app.post('/generate', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // Assuming that `wordsInput` is an array of strings
-    const wordsInput = req.body.words.toUpperCase();
+    const wordsInput = req.body.words;
     const hints = req.body.hints.split('\n');
-    const words = wordsInput
-        .split('\n')
-        .map((line, i) => ({
-        data: parseInputLine(line.trim()),
-        hint: hints[i]
-    }))
-        .filter((word) => word.data.length > 0);
+    const language = req.body.language;
+    var words;
+    if (language == 'english') {
+        words = wordsInput
+            .split('\n')
+            .map((line, i) => ({ data: line.trim().split(''), hint: hints[i] }))
+            .filter((word) => word.data.length > 0);
+    }
+    else {
+        words = wordsInput
+            .split('\n')
+            .map((line, i) => ({
+            data: parseInputLine(line.trim()),
+            hint: hints[i]
+        }))
+            .filter((word) => word.data.length > 0);
+    }
+    console.log(words);
     // Generate crosswords
     const crosswords = yield (0, crossword_1.default)(words, hints);
     // Render the result using Nunjucks

@@ -52,7 +52,7 @@ function findPotentialPlacements(board, word) {
                 }
             }
             if (intersections >= 0 || nearnessScore >= 0) {
-                placements.push([r, c, 'horizontal', intersections * 10]);
+                placements.push([r, c, 'horizontal', intersections * 10 + nearnessScore]);
             }
             // Backward placement
             intersections = 0;
@@ -75,7 +75,7 @@ function findPotentialPlacements(board, word) {
                 }
             }
             if (intersections >= 0 || nearnessScore >= 0) {
-                placements.push([r, c, 'horizontal-reverse', intersections * 10]);
+                placements.push([r, c, 'horizontal-reverse', intersections * 10 + nearnessScore]);
             }
         }
     }
@@ -125,7 +125,7 @@ function findPotentialPlacements(board, word) {
                 }
             }
             if (intersections >= 0 || nearnessScore >= 0) {
-                placements.push([r, c, 'vertical-reverse', intersections * 10]);
+                placements.push([r, c, 'vertical-reverse', intersections * 10 + nearnessScore]);
             }
         }
     }

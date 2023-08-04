@@ -60,9 +60,27 @@ h2 {
   </style>
 
   <title>Crossword Generator</title>
+  <script src="./script.js" type="module"></script>
+
 </head>
 <body>
-<script type="text/javascript">
+<script type="module">
+  import init, { script_swap } from "./pkg/transliterate_ferris_wasm.js";
+  function transliterateCell(inputData, selectedScript) {
+  const indic = ["devanagari", "telugu", "kannada"];
+  const roman = ["itrans", "iast", "slp1", "hk"];
+  let conversion;
+
+  if (indic.includes(selectedScript)) {
+    conversion = 3;
+  } else if (roman.includes(selectedScript)) {
+    conversion = 2;
+  }
+
+  // Use the 'script_swap' function to perform the transliteration
+  const transliterated = script_swap(inputData, 'slp1', selectedScript, conversion);
+  return transliterated;
+}
   function printDiv(divID) {
     // Get the HTML of div
     var divElements = document.getElementById(divID).outerHTML;
@@ -88,16 +106,55 @@ h2 {
 
     // Restore the original HTML
     document.body.innerHTML = oldPage;
-  }   
-</script>
+  }
 
-    <form action="/generate" method="post">
+function transliterateCrosswords() {
+  const selectedScript = document.getElementById("t1-select").value;
+  const crosswordDivs = document.querySelectorAll('[id^="crossword_"]');
+
+  crosswordDivs.forEach((div) => {
+    if (div) {
+      console.log("Crossword Table:", div);
+      const crosswordTable = div;
+      const cells = crosswordTable.querySelectorAll("td[contenteditable]");
+      cells.forEach((cell) => {
+        // Get the input data from the cell
+        const inputData = cell.innerText;
+        console.log("Input Data:", inputData);
+
+        // Perform transliteration using the transliterateCell function
+        const transliterated = transliterateCell(inputData, selectedScript);
+        console.log("Transliterated Data:", transliterated);
+
+        // Update the cell content with the transliterated value
+        cell.innerText = transliterated;
+      });
+    } else {
+      console.error("Table not found inside the crossword div.");
+    }
+  });
+}
+
+</script>
+  <form action="/generate" method="post" onsubmit="transliterateAndSubmit()">
     <label for="words">Enter words (one per line):</label><br>
     <textarea id="words" name="words" rows="5" cols="50"></textarea><br>
     <textarea id="hints" name="hints" rows="5" cols="50"></textarea><br>
-    <button type="submit">Generate Crosswords</button>
+    <label for="languageSelect">Choose Language:</label>
+            <select id="t1-select">
+                <option value="devanagari">devanagari</option>
+                <option value="telugu">telugu</option>
+                <option value="kannada">kannada</option>
+		        <option value="hk">hk</option>
+                <option value="itrans">itrans</option>
+                <option value="iast">iast</option>
+                <option value="slp1">slp1</option>
+            </select>
+    <input type="radio" name="language" value="english" checked> English
+    <input type="radio" name="language" value="indic"> Indic
+<button type="submit" id="submitBtn">Generate Crosswords</button>
   </form>
-
+  <button id="transliterate" onclick="transliterateCrosswords()">Transliterate</button>
 {% for crossword in crosswords %}
     <h2>Crossword {{ loop.index }}</h2>
     <table id="crossword_{{ loop.index }}">

@@ -10,6 +10,7 @@ const port = 3000;
 
 // Configure Nunjucks
 const templatesDir = path.resolve(__dirname, 'public');
+app.use(express.static(templatesDir));
 nunjucks.configure(templatesDir, {
   autoescape: true,
   express: app,
@@ -28,13 +29,24 @@ app.post('/generate', async (req, res) => {
   // Assuming that `wordsInput` is an array of strings
   const wordsInput = req.body.words;
   const hints: string[] = req.body.hints.split('\n');
-  const words: Word[] = wordsInput
+  const language = req.body.language;
+  var words: Word[];
+  if(language == 'english'){
+    words = wordsInput
+  .split('\n')
+  .map((line: string, i: number) => ({ data: line.trim().split(''), hint: hints[i] }))
+  .filter((word: Word) => word.data.length > 0);
+
+  } else {
+    words = wordsInput
   .split('\n')
   .map((line: string, i: number) => ({
     data: parseInputLine(line.trim()),
     hint: hints[i]
   }))
   .filter((word: Word) => word.data.length > 0);
+  }
+  console.log(words);
   // Generate crosswords
   const crosswords = await generateCrosswords(words, hints);
   // Render the result using Nunjucks
