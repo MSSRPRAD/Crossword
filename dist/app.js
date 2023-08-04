@@ -33,14 +33,18 @@ app.get('/', (req, res) => {
 });
 // Route to handle the form submission and display the result
 app.post('/generate', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const wordsInput = req.body.words;
-    // Process the words input from the textarea
+    // Assuming that `wordsInput` is an array of strings
+    const wordsInput = req.body.words.toUpperCase();
+    const hints = req.body.hints.split('\n');
     const words = wordsInput
         .split('\n')
-        .map((line) => ({ data: line.trim().split('') }))
+        .map((line, i) => ({
+        data: parseInputLine(line.trim()),
+        hint: hints[i]
+    }))
         .filter((word) => word.data.length > 0);
     // Generate crosswords
-    const crosswords = yield (0, crossword_1.default)(words);
+    const crosswords = yield (0, crossword_1.default)(words, hints);
     // Render the result using Nunjucks
     res.render('index.html', { crosswords });
 }));
@@ -48,3 +52,46 @@ app.post('/generate', (req, res) => __awaiter(void 0, void 0, void 0, function* 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
+function parseInputLine(inputLine) {
+    const words = [];
+    const vowels = "aiufxAIUeEoOFX";
+    const consonants = "kKgGNcCjJYwWqQRtTdDnpPbBmyrlvSzsh";
+    const others = "MH";
+    let curr = "";
+    for (let i = 0; i < inputLine.length; i++) {
+        const char = inputLine[i];
+        if (consonants.includes(char)) {
+            if (i === inputLine.length - 1) {
+                curr += char;
+                curr += "a";
+                words.push(curr);
+                curr = "";
+            }
+            else {
+                curr += char;
+            }
+        }
+        else if (vowels.includes(char)) {
+            if (i !== inputLine.length - 1) {
+                if (others.includes(inputLine[i + 1])) {
+                    curr += char;
+                    curr += inputLine[i + 1];
+                    words.push(curr);
+                    curr = "";
+                    i++;
+                }
+                else {
+                    curr += char;
+                    words.push(curr);
+                    curr = "";
+                }
+            }
+            else {
+                curr += char;
+                words.push(curr);
+                curr = "";
+            }
+        }
+    }
+    return words;
+}

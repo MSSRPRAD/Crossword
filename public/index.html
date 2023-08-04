@@ -3,10 +3,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Crossword Generator</title>
-  <link href="./styles.css">
-</head>
-<body>
   <style type="text/css" media="screen">
   body {
   font-family: Arial, sans-serif;
@@ -62,24 +58,77 @@ h2 {
 }
         
   </style>
-  <form action="/generate" method="post">
+
+  <title>Crossword Generator</title>
+</head>
+<body>
+<script type="text/javascript">
+  function printDiv(divID) {
+    // Get the HTML of div
+    var divElements = document.getElementById(divID).outerHTML;
+
+    // Get the styles defined in the <style> tag
+    var styles = document.head.querySelector("style").outerHTML;
+
+    // Get the HTML of the whole page
+    var oldPage = document.body.innerHTML;
+
+    // Create a new page with the content of the printable div and styles
+    var newPage = "<html><head>" + 
+                  styles +
+                  "</head><body>" + 
+                  divElements + 
+                  "</body></html>";
+
+    // Replace the page's HTML with the new page
+    document.body.innerHTML = newPage;
+
+    // Print the new page
+    window.print();
+
+    // Restore the original HTML
+    document.body.innerHTML = oldPage;
+  }   
+</script>
+
+    <form action="/generate" method="post">
     <label for="words">Enter words (one per line):</label><br>
     <textarea id="words" name="words" rows="5" cols="50"></textarea><br>
+    <textarea id="hints" name="hints" rows="5" cols="50"></textarea><br>
     <button type="submit">Generate Crosswords</button>
   </form>
 
-    {% for crossword in crosswords %}
+{% for crossword in crosswords %}
     <h2>Crossword {{ loop.index }}</h2>
-    <table>
+    <table id="crossword_{{ loop.index }}">
       {% for row in crossword.board %}
         <tr>
           {% for cell in row %}
-            <td>{{ cell }}</td>
+            {% if cell != "/" %}
+              <td contenteditable style="background-color: white;">{{ cell }}</td>
+            {% else %}
+              <td></td>
+            {% endif %}
           {% endfor %}
         </tr>
       {% endfor %}
     </table>
     <br>
+
+    <h3>Hints:</h3>
+    <ul>
+      {% for hint in crossword.hints %}
+        <li>
+          {% if hint.direction === 'across' %}
+            Across ({{ hint.position }}): {{ hint.hint }}
+          {% else %}
+            Vertical ({{ hint.position }}): {{ hint.hint }}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    <button onclick="javascript:printDiv('crossword_{{ loop.index }}')">Print Crossword {{ loop.index }}</button>
   {% endfor %}
 
 </body>

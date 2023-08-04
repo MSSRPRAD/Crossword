@@ -1,13 +1,18 @@
 export interface Crossword {
   board: string[][];
+  hints: Hint[];
 }
-
+export interface Hint {
+  hint: string;
+  position: number;
+  direction: 'across' | 'vertical';
+}
 export interface Word {
   data: string[];
+  hint: string;
 }
 
-type PotentialPlacement = [number, number, 'horizontal' | 'vertical', number];
-
+type PotentialPlacement = [number, number, 'horizontal' | 'vertical' | 'horizontal-reverse' | 'vertical-reverse', number];
 
 function createInitialCrossword(rows: number, cols: number): Crossword {
   const emptyBoard: string[][] = [];
@@ -15,11 +20,11 @@ function createInitialCrossword(rows: number, cols: number): Crossword {
   for (let r = 0; r < rows; r++) {
     emptyBoard[r] = [];
     for (let c = 0; c < cols; c++) {
-      emptyBoard[r][c] = "X";
+      emptyBoard[r][c] = "/";
     }
   }
 
-  return { board: emptyBoard };
+  return { board: emptyBoard, hints: [] as Hint[] };
 }
 
 function findPotentialPlacements(
@@ -30,59 +35,108 @@ function findPotentialPlacements(
   const rows = board.length;
   const cols = board[0].length;
   const wordLength = word.data.length;
-  const isEmptyBoard = board.every(row => row.every(cell => cell === "X"));
+  const isEmptyBoard = board.every(row => row.every(cell => cell === "/"));
   if(isEmptyBoard) {
     return [[rows / 2, cols / 2, 'horizontal', 0]];
   }
+
   for (let r = 3; r < rows-3; r++) {
     for (let c = 3; c <= cols - wordLength-3; c++) {
+      // Forward placement
       let intersections = 0;
       let nearnessScore = 0;
       for (let i = 0; i < wordLength; i++) {
         if (board[r][c + i] === word.data[i]) {
           intersections++;
-        } else if (board[r][c + i] !== "X") {
+        } else if (board[r][c + i] !== "/") {
           intersections = 0;
           nearnessScore = 0;
           break;
         } else {
-          for(let p = 1; p <= 3; p++){
-            if (board[r-p][c+i] !== "X" || board[r+p][c+i] !== "X") {
-              nearnessScore+=p;
+          for (let p = 1; p <= 3; p++) {
+            if (board[r - p][c + i] !== "/" || board[r + p][c + i] !== "/") {
+              nearnessScore += (4-p);
             }
           }
         }
       }
 
       if (intersections >= 0 || nearnessScore >= 0) {
-        placements.push([r, c, 'horizontal', intersections * 10 ]);
+        placements.push([r, c, 'horizontal', intersections * 10]);
+      }
+
+      // Backward placement
+      intersections = 0;
+      nearnessScore = 0;
+      for (let i = 0; i < wordLength; i++) {
+        if (board[r][c + wordLength - i - 1] === word.data[i]) {
+          intersections++;
+        } else if (board[r][c + wordLength - i - 1] !== "/") {
+          intersections = 0;
+          nearnessScore = 0;
+          break;
+        } else {
+          for (let p = 1; p <= 3; p++) {
+            if (board[r - p][c + wordLength - i - 1] !== "/" || board[r + p][c + wordLength - i - 1] !== "/") {
+              nearnessScore += (4-p);
+            }
+          }
+        }
+      }
+
+      if (intersections >= 0 || nearnessScore >= 0) {
+        placements.push([r, c, 'horizontal-reverse', intersections * 10]);
       }
     }
   }
 
   for (let r = 3; r <= rows - wordLength-3; r++) {
     for (let c = 3; c < cols-3; c++) {
+      // Forward placement
       let intersections = 0;
       let nearnessScore = 0;
 
       for (let i = 0; i < wordLength; i++) {
         if (board[r + i][c] === word.data[i]) {
           intersections++;
-        } else if (board[r + i][c] !== 'X') {
+        } else if (board[r + i][c] !== "/") {
           nearnessScore = 0;
           intersections = 0;
           break;
         } else {
-            for(let p = 1; p <= 3; p++){
-                if (board[r+i][c-p] !== "X" || board[r+i][c+p] !== "X") {
-                  nearnessScore+=p;
-                }
+          for (let p = 1; p <= 3; p++) {
+            if (board[r + i][c - p] !== "/" || board[r + i][c + p] !== "/") {
+              nearnessScore += p;
             }
+          }
         }
       }
 
       if (intersections >= 0 || nearnessScore >= 0) {
         placements.push([r, c, 'vertical', intersections * 10 + nearnessScore]);
+      }
+
+      // Backward placement
+      intersections = 0;
+      nearnessScore = 0;
+      for (let i = 0; i < wordLength; i++) {
+        if (board[r + wordLength - i - 1][c] === word.data[i]) {
+          intersections++;
+        } else if (board[r + wordLength - i - 1][c] !== "/") {
+          intersections = 0;
+          nearnessScore = 0;
+          break;
+        } else {
+          for (let p = 1; p <= 3; p++) {
+            if (board[r + wordLength - i - 1][c - p] !== "/" || board[r + wordLength - i - 1][c + p] !== "/") {
+              nearnessScore += p;
+            }
+          }
+        }
+      }
+
+      if (intersections >= 0 || nearnessScore >= 0) {
+        placements.push([r, c, 'vertical-reverse', intersections * 10]);
       }
     }
   }
@@ -98,7 +152,7 @@ function findPotentialPlacements(
 
 // Function to remove unnecessary 'X's outside the bounding box
 function shortenCrossword(crossword: Crossword): Crossword {
-  const { board } = crossword;
+  const { board, hints } = crossword;
   const rows = board.length;
   const cols = board[0].length;
 
@@ -110,7 +164,7 @@ function shortenCrossword(crossword: Crossword): Crossword {
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      if (board[r][c] !== 'X') {
+      if (board[r][c] !== '/') {
         minRow = Math.min(minRow, r);
         maxRow = Math.max(maxRow, r);
         minCol = Math.min(minCol, c);
@@ -125,17 +179,17 @@ function shortenCrossword(crossword: Crossword): Crossword {
     shortenedBoard.push(board[r].slice(minCol, maxCol + 1));
   }
 
-  return { board: shortenedBoard };
+  return { board: shortenedBoard, hints: hints };
 }
 
-async function generateCrosswords(words: Word[]): Promise<Crossword[]> {
+async function generateCrosswords(words: Word[], hints: string[]): Promise<Crossword[]> {
   const crosswords: Crossword[] = [];
   const initialCrossword: Crossword = createInitialCrossword(300, 300);
-  await generateCrosswordHelper(words, initialCrossword, crosswords);
+  await generateCrosswordHelper(words, initialCrossword, crosswords, hints);
   // Shorten each crossword before returning
   const shortenedCrosswords = crosswords.map(shortenCrossword);
   // Sort shortened crosswords by their dimensions (length x width)
-  const sortedCrosswords = shortenedCrosswords.sort((a, b) => getCrosswordSize(a) - getCrosswordSize(b));
+  const sortedCrosswords = shortenedCrosswords.sort((a, b) => getCrosswordSize(b) - getCrosswordSize(a));
   return sortedCrosswords;
 }
 
@@ -146,33 +200,57 @@ function getCrosswordSize(crossword: Crossword): number {
   return rows * cols;
 }
 
-function placeWord(board: Crossword, word: Word, placement: PotentialPlacement): Crossword {
-  const { board: currentBoard } = board;
+export function placeWord(board: Crossword, word: Word, placement: PotentialPlacement, hint: string): Crossword {
+  const { board: currentBoard, hints: currentHints } = board;
   const [row, col, orientation, score] = placement;
   const newBoard: string[][] = [];
 
-  // Make a deep copy of the current board
+  // Make a deep copy of the current board and hints
   for (let r = 0; r < currentBoard.length; r++) {
     newBoard[r] = currentBoard[r].slice(); // Deep copy each row
   }
+  const newHints: Hint[] = JSON.parse(JSON.stringify(currentHints));
 
   // Place the word on the new board
-  for (let i = 0; i < word.data.length; i++) {
-    if (orientation === 'horizontal') {
-      newBoard[row][col + i] = word.data[i];
-    } else {
-      newBoard[row + i][col] = word.data[i];
+  if (orientation === 'horizontal' || orientation === 'horizontal-reverse') {
+    const reverse = orientation === 'horizontal-reverse';
+    for (let i = 0; i < word.data.length; i++) {
+      if (reverse) {
+        newBoard[row][col + word.data.length - i - 1] = word.data[i];
+      } else {
+        newBoard[row][col + i] = word.data[i];
+      }
+    }
+  } else if (orientation === 'vertical' || orientation === 'vertical-reverse') {
+    const reverse = orientation === 'vertical-reverse';
+    for (let i = 0; i < word.data.length; i++) {
+      if (reverse) {
+        newBoard[row + word.data.length - i - 1][col] = word.data[i];
+      } else {
+        newBoard[row + i][col] = word.data[i];
+      }
     }
   }
 
-  return { board: newBoard };
+  // Add the word's hint to the hints array
+  newHints.push({
+    hint: hint, // Join the hint array into a single string
+    position: row * currentBoard[0].length + col,
+    direction: orientation === 'horizontal' || orientation === 'horizontal-reverse'
+      ? 'across'
+      : 'vertical',
+  });
+
+  return { board: newBoard, hints: newHints };
 }
+
 
 
 async function generateCrosswordHelper(
   words: Word[],
   currentBoard: Crossword,
-  crosswords: Crossword[]
+  crosswords: Crossword[],
+  hints: string[]
 ): Promise<void> {
   console.log("reached helper");
   // Base case: If no words remain, we have a complete crossword. Save the board and return.
@@ -184,6 +262,7 @@ async function generateCrosswordHelper(
 
   // Extract the first word from the words array and remaining words for recursion.
   const [word, ...remainingWords]: Word[] = words;
+  const [hint, ...remainingHints]: string[] = hints;
   // Find all potential placements for the current word on the current board.
   const potentialPlacements = findPotentialPlacements(currentBoard.board, word);
   console.log("got potential placements!");
@@ -191,9 +270,9 @@ async function generateCrosswordHelper(
   // Explore each potential placement.
   for (const placement of potentialPlacements) {
     // Create a new board with the word placed at the current placement.
-    const newBoard = placeWord(currentBoard, word, placement);
+    const newBoard = placeWord(currentBoard, word, placement, hint);
     // Recursively call generateCrosswordHelper with the remaining words and the new board.
-    await generateCrosswordHelper(remainingWords, newBoard, crosswords);
+    await generateCrosswordHelper(remainingWords, newBoard, crosswords, remainingHints);
   }
 }
 
