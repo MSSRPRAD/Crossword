@@ -1,11 +1,14 @@
+const LIMIT = 1;
+
 export interface Crossword {
   board: string[][];
   hints: Hint[];
 }
 export interface Hint {
   hint: string;
-  position: number;
-  direction: 'across' | 'vertical';
+  x: number;
+  y: number;
+  direction: 'horizontal' | 'vertical' | 'horizontal-reverse' | 'vertical-reverse' | 'unknown';
 }
 export interface Word {
   data: string[];
@@ -145,12 +148,12 @@ function findPotentialPlacements(
   placements.sort((a, b) => b[3] - a[3]);
 
   // Return only the top 5 placements
-  return placements.slice(0, 2);
+  return placements.slice(0, LIMIT);
 }
 
 
 
-// Function to remove unnecessary 'X's outside the bounding box
+// Function to remove unnecessary '/'s outside the bounding box
 function shortenCrossword(crossword: Crossword): Crossword {
   const { board, hints } = crossword;
   const rows = board.length;
@@ -179,7 +182,15 @@ function shortenCrossword(crossword: Crossword): Crossword {
     shortenedBoard.push(board[r].slice(minCol, maxCol + 1));
   }
 
-  return { board: shortenedBoard, hints: hints };
+  // Update the hints' x and y coordinates
+  const updatedHints = hints.map((hint: Hint) => ({
+      hint: hint.hint,
+      x: hint.x - minRow,
+      y: hint.y - minCol,
+      direction: hint.direction,
+    })
+  );
+  return { board: shortenedBoard, hints: updatedHints };
 }
 
 async function generateCrosswords(words: Word[], hints: string[]): Promise<Crossword[]> {
@@ -231,16 +242,24 @@ export function placeWord(board: Crossword, word: Word, placement: PotentialPlac
       }
     }
   }
+  console.log('orientation is: '+orientation);
+
+  // Adjust the x and y values for horizontal-reverse and vertical-reverse placements
+  let startX = row;
+  let startY = col;
+  if (orientation === 'horizontal-reverse') {
+    startY = col + word.data.length - 1;
+  } else if (orientation === 'vertical-reverse') {
+    startX = row + word.data.length - 1;
+  }
 
   // Add the word's hint to the hints array
   newHints.push({
-    hint: hint, // Join the hint array into a single string
-    position: row * currentBoard[0].length + col,
-    direction: orientation === 'horizontal' || orientation === 'horizontal-reverse'
-      ? 'across'
-      : 'vertical',
+    hint: hint,
+    x: startX,
+    y: startY,
+    direction: orientation,
   });
-
   return { board: newBoard, hints: newHints };
 }
 

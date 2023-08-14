@@ -64,6 +64,11 @@ app.post('/generate', (req, res) => __awaiter(void 0, void 0, void 0, function* 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
+function getRandomConsonant() {
+    const consonants = "kKgGNcCjJYwWqQRtTdDnpPbBmyrlvSzsh";
+    const randomIndex = Math.floor(Math.random() * consonants.length);
+    return consonants[randomIndex];
+}
 function parseInputLine(inputLine) {
     const words = [];
     const vowels = "aiufxAIUeEoOFX";
@@ -84,7 +89,13 @@ function parseInputLine(inputLine) {
             }
         }
         else if (vowels.includes(char)) {
-            if (i !== inputLine.length - 1) {
+            if (i == 0) {
+                if (vowels.includes(char)) {
+                    const randomConsonant = getRandomConsonant();
+                    words.push(randomConsonant + char);
+                }
+            }
+            else if (i !== inputLine.length - 1) {
                 if (others.includes(inputLine[i + 1])) {
                     curr += char;
                     curr += inputLine[i + 1];

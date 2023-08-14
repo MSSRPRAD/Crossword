@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.placeWord = void 0;
+const LIMIT = 1;
 function createInitialCrossword(rows, cols) {
     const emptyBoard = [];
     for (let r = 0; r < rows; r++) {
@@ -132,9 +133,9 @@ function findPotentialPlacements(board, word) {
     // Sort placements based on intersections (higher is better) and nearnessScore (lower is better)
     placements.sort((a, b) => b[3] - a[3]);
     // Return only the top 5 placements
-    return placements.slice(0, 2);
+    return placements.slice(0, LIMIT);
 }
-// Function to remove unnecessary 'X's outside the bounding box
+// Function to remove unnecessary '/'s outside the bounding box
 function shortenCrossword(crossword) {
     const { board, hints } = crossword;
     const rows = board.length;
@@ -159,7 +160,14 @@ function shortenCrossword(crossword) {
     for (let r = minRow; r <= maxRow; r++) {
         shortenedBoard.push(board[r].slice(minCol, maxCol + 1));
     }
-    return { board: shortenedBoard, hints: hints };
+    // Update the hints' x and y coordinates
+    const updatedHints = hints.map((hint) => ({
+        hint: hint.hint,
+        x: hint.x - minRow,
+        y: hint.y - minCol,
+        direction: hint.direction,
+    }));
+    return { board: shortenedBoard, hints: updatedHints };
 }
 function generateCrosswords(words, hints) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -211,13 +219,22 @@ function placeWord(board, word, placement, hint) {
             }
         }
     }
+    console.log('orientation is: ' + orientation);
+    // Adjust the x and y values for horizontal-reverse and vertical-reverse placements
+    let startX = row;
+    let startY = col;
+    if (orientation === 'horizontal-reverse') {
+        startY = col + word.data.length - 1;
+    }
+    else if (orientation === 'vertical-reverse') {
+        startX = row + word.data.length - 1;
+    }
     // Add the word's hint to the hints array
     newHints.push({
         hint: hint,
-        position: row * currentBoard[0].length + col,
-        direction: orientation === 'horizontal' || orientation === 'horizontal-reverse'
-            ? 'across'
-            : 'vertical',
+        x: startX,
+        y: startY,
+        direction: orientation,
     });
     return { board: newBoard, hints: newHints };
 }
